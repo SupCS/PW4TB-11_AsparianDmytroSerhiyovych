@@ -1,72 +1,120 @@
 package ua.asparian.practice4
 
-import android.content.Intent
 import android.os.Bundle
-import android.util.Log
-import android.widget.Button
-import android.widget.EditText
-import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.Button
+import androidx.compose.material.Text
+import androidx.compose.material.TextField
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
 import kotlin.math.sqrt
 
-class Example7_1Activity : AppCompatActivity() {
+class Example7_1Activity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.example7_1_activity)
+        setContent {
+            Example7_1Screen()
+        }
+    }
+}
 
-        // Поля для введення значень
-        val inputSm: EditText = findViewById(R.id.input_sm) // Розрахункове навантаження в кВА
-        val inputIk: EditText = findViewById(R.id.input_ik) // Струм короткого замикання в А
-        val inputTf: EditText = findViewById(R.id.input_tf) // Час дії струму КЗ в секундах
-        val inputUnom: EditText = findViewById(R.id.input_unom) // Номінальна напруга в кВ
-        val inputTm: EditText = findViewById(R.id.input_tm) // Розрахункова тривалість роботи в годинах
+@Composable
+fun Example7_1Screen() {
+    var sm by remember { mutableStateOf("") }
+    var ik by remember { mutableStateOf("") }
+    var tf by remember { mutableStateOf("") }
+    var unom by remember { mutableStateOf("") }
+    var tm by remember { mutableStateOf("") }
+    var resultText by remember { mutableStateOf("Результати з'являться тут") }
 
-        val buttonCalculate: Button = findViewById(R.id.button_calculate)
-        val resultText: TextView = findViewById(R.id.result_text)
-        val buttonBack: Button = findViewById(R.id.button_back)
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        TextField(
+            value = sm,
+            onValueChange = { sm = it },
+            label = { Text("Розрахункове навантаження Sм (кВА)") },
+            modifier = Modifier.fillMaxWidth(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+        )
+        Spacer(modifier = Modifier.height(8.dp))
 
-        buttonCalculate.setOnClickListener {
-            val Sm = inputSm.text.toString().toDoubleOrNull() ?: 0.0
-            val Ik = inputIk.text.toString().toDoubleOrNull() ?: 0.0
-            val tf = inputTf.text.toString().toDoubleOrNull() ?: 0.0
-            val Unom = inputUnom.text.toString().toDoubleOrNull() ?: 0.0
-            val Tm = inputTm.text.toString().toDoubleOrNull() ?: 0.0
+        TextField(
+            value = ik,
+            onValueChange = { ik = it },
+            label = { Text("Струм короткого замикання Iк (А)") },
+            modifier = Modifier.fillMaxWidth(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+        )
+        Spacer(modifier = Modifier.height(8.dp))
 
-            // Стандартні значення для розрахунків
+        TextField(
+            value = tf,
+            onValueChange = { tf = it },
+            label = { Text("Час дії струму КЗ tф (с)") },
+            modifier = Modifier.fillMaxWidth(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+
+        TextField(
+            value = unom,
+            onValueChange = { unom = it },
+            label = { Text("Номінальна напруга Uном (кВ)") },
+            modifier = Modifier.fillMaxWidth(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+
+        TextField(
+            value = tm,
+            onValueChange = { tm = it },
+            label = { Text("Розрахункова тривалість роботи Тм (год)") },
+            modifier = Modifier.fillMaxWidth(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(onClick = {
+            val Sm = sm.toDoubleOrNull() ?: 0.0
+            val Ik = ik.toDoubleOrNull() ?: 0.0
+            val Tf = tf.toDoubleOrNull() ?: 0.0
+            val Unom = unom.toDoubleOrNull() ?: 0.0
+            val Tm = tm.toDoubleOrNull() ?: 0.0
+
             val Jek = 1.4 // Густина струму
             val Ct = 92.0 // Константа для термічної стійкості
 
-            if (Sm > 0 && Ik > 0 && tf > 0 && Unom > 0 && Tm > 0) {
-                // Розрахунок струму для нормального режиму
+            resultText = if (Sm > 0 && Ik > 0 && Tf > 0 && Unom > 0 && Tm > 0) {
                 val Im = Sm / (2 * sqrt(3.0) * Unom)
-                Log.d("Calculation", "Розрахунковий струм для нормального режиму (Im): $Im")
-
-                val ImPa = 2 * Im // Післяаварійний струм
-                Log.d("Calculation", "Розрахунковий струм для післяаварійного режиму (ImPa): $ImPa")
-
-                // Розрахунок економічного перерізу
+                val ImPa = 2 * Im
                 val Sek = Im / Jek
-                Log.d("Calculation", "Економічний переріз (Sek): $Sek")
+                val Smin = (Ik * sqrt(Tf)) / Ct
 
-                // Розрахунок мінімального перерізу для термічної стійкості
-                val Smin = (Ik * sqrt(tf)) / Ct
-                Log.d("Calculation", "Мінімальний переріз для термічної стійкості (Smin): $Smin")
-
-                resultText.text = """
+                """
                     Розрахунковий струм для нормального режиму: ${"%.2f".format(Im)} A
                     Розрахунковий струм для післяаварійного режиму: ${"%.2f".format(ImPa)} A
                     Економічний переріз: ${"%.2f".format(Sek)} мм²
                     Мінімальний переріз для термічної стійкості: ${"%.2f".format(Smin)} мм²
                 """.trimIndent()
             } else {
-                resultText.text = "Будь ласка, введіть коректні значення"
+                "Будь ласка, введіть коректні значення"
             }
+        }) {
+            Text("Розрахувати")
         }
+        Spacer(modifier = Modifier.height(16.dp))
 
-        buttonBack.setOnClickListener {
-            val intent = Intent(this, MainActivity::class.java)
-            startActivity(intent)
-        }
+        Text(resultText)
     }
 }
